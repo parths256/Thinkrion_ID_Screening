@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Thinkrion Identity Screening
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+
+        <h1>
+            THINKRION
+        </h1>
+
+        <p>
+            AI-Based Fake Identity &
+            Document Screening System
+        </p>
+
+    </div>
+
+
+    <div class="card">
+
+        <h2>
+            Identity Document Screening
+        </h2>
+
+        <form
+            method="POST"
+            enctype="multipart/form-data"
+        >
+
+            <input
+                type="file"
+                name="document"
+                accept="image/*"
+                required
+            >
+
+            <button type="submit">
+
+                Scan Document
+
+            </button>
+
+        </form>
+
+    </div>
+
+
+{% if extracted_text %}
+
+
+<div class="result-card">
+
+
+    <h2>
+        Screening Dashboard
+    </h2>
+
+
+    <p class="filename">
+
+        Uploaded:
+        {{ filename }}
+
+    </p>
+
+
+    <hr>
+
+
+    <!-- OCR DETAILS -->
+
+    <h3>
+        Extracted Identity Information
+    </h3>
+
+
+    <div class="grid">
+
+        <div class="box">
+
+            <span>
+                Document
+            </span>
+
+            <strong>
+                {{ fields.document_type }}
+            </strong>
+
+        </div>
+
+
+        <div class="box">
+
+            <span>
+                Name
+            </span>
+
+            <strong>
+                {{ fields.name }}
+            </strong>
+
+        </div>
+
+
+        <div class="box">
+
+            <span>
+                Date of Birth
+            </span>
+
+            <strong>
+                {{ fields.dob }}
+            </strong>
+
+        </div>
+
+
+        <div class="box">
+
+            <span>
+                Gender
+            </span>
+
+            <strong>
+                {{ fields.gender }}
+            </strong>
+
+        </div>
+
+
+        <div class="box">
+
+            <span>
+                ID Number
+            </span>
+
+            <strong>
+                {{ fields.id_number }}
+            </strong>
+
+        </div>
+
+
+        <div class="box">
+
+            <span>
+                Issuer
+            </span>
+
+            <strong>
+                {{ fields.issuer }}
+            </strong>
+
+        </div>
+
+    </div>
+
+
+    <hr>
+
+
+    <!-- PRE FACE SCORES -->
+
+
+    <h3>
+        Initial Screening
+    </h3>
+
+
+    <div class="risk-grid">
+
+
+        <div class="risk-box">
+
+            <span>
+                OCR Risk
+            </span>
+
+            <strong>
+                {{ fields.risk_score }}
+                / 100
+            </strong>
+
+        </div>
+
+
+        <div class="risk-box">
+
+            <span>
+                Tampering Risk
+            </span>
+
+            <strong>
+                {{ tampering.score }}
+                / 100
+            </strong>
+
+        </div>
+
+
+        <div class="risk-box">
+
+            <span>
+                Face Verification
+            </span>
+
+            <strong id="faceStatus">
+
+                NOT CHECKED
+
+            </strong>
+
+        </div>
+
+
+    </div>
+
+
+    <!-- TAMPERING -->
+
+
+    <hr>
+
+
+    <h3>
+        Document Integrity Analysis
+    </h3>
+
+
+    <p>
+
+        <strong>
+            Status:
+        </strong>
+
+        {{ tampering.status }}
+
+    </p>
+
+
+    <ul>
+
+        {% for reason in tampering.reasons %}
+
+        <li>
+            {{ reason }}
+        </li>
+
+        {% endfor %}
+
+    </ul>
+
+
+    <!-- FACE -->
+
+
+    <hr>
+
+
+    <h3>
+        Live Face Verification
+    </h3>
+
+
+    <div class="camera-box">
+
+        <video
+            id="video"
+            autoplay
+            playsinline
+        ></video>
+
+
+        <canvas
+            id="canvas"
+            width="420"
+            height="315"
+            style="display:none;"
+        ></canvas>
+
+    </div>
+
+
+    <div class="button-row">
+
+        <button
+            type="button"
+            onclick="startCamera()"
+        >
+
+            Start Camera
+
+        </button>
+
+
+        <button
+            type="button"
+            onclick="captureFace()"
+        >
+
+            Capture & Verify
+
+        </button>
+
+    </div>
+
+
+    <div id="faceResult">
+
+        Face verification not performed.
+
+    </div>
+
+
+    <!-- FINAL DASHBOARD -->
+
+
+    <div
+        id="finalDashboard"
+        class="final-dashboard hidden"
+    >
+
+
+        <h2>
+
+            FINAL SCREENING RESULT
+
+        </h2>
+
+
+        <div class="final-score">
+
+            <span>
+                Final Risk Score
+            </span>
+
+
+            <strong id="finalScore">
+
+                --
+
+            </strong>
+
+        </div>
+
+
+        <div
+            id="decisionBadge"
+            class="decision-badge"
+        >
+
+            INCOMPLETE
+
+        </div>
+
+
+        <div class="final-breakdown">
+
+
+            <p>
+
+                OCR Risk:
+
+                <strong id="finalOCR">
+
+                    --
+
+                </strong>
+
+            </p>
+
+
+            <p>
+
+                Tampering Risk:
+
+                <strong id="finalTamper">
+
+                    --
+
+                </strong>
+
+            </p>
+
+
+            <p>
+
+                Face Risk:
+
+                <strong id="finalFace">
+
+                    --
+
+                </strong>
+
+            </p>
+
+
+        </div>
+
+
+        <h3>
+            Explainable Findings
+        </h3>
+
+
+        <ul id="finalReasons">
+
+        </ul>
+
+
+        <p class="officer-note">
+
+            Final decision remains with
+            the reviewing officer.
+
+        </p>
+
+
+    </div>
+
+
+    <!-- MODULE STATUS -->
+
+
+    <hr>
+
+
+    <h3>
+        System Modules
+    </h3>
+
+
+    <div class="modules">
+
+        <p>
+            ✅ Document Upload
+        </p>
+
+        <p>
+            ✅ OCR Extraction
+        </p>
+
+        <p>
+            ✅ Identity Field Extraction
+        </p>
+
+        <p>
+            ✅ Rule-Based Validation
+        </p>
+
+        <p>
+            ✅ Tampering Analysis
+        </p>
+
+        <p id="faceModule">
+            ⏳ Face Verification
+        </p>
+
+        <p id="riskModule">
+            ⏳ Final Risk Assessment
+        </p>
+
+    </div>
+
+
+    <hr>
+
+
+    <details>
+
+        <summary>
+
+            View Raw OCR Text
+
+        </summary>
+
+        <pre>
+{{ extracted_text }}
+        </pre>
+
+    </details>
+
+
+</div>
+
+
+{% endif %}
+
+
+</div>
+
+
+<script>
+
+
+let video =
+    document.getElementById(
+        "video"
+    );
+
+
+let canvas =
+    document.getElementById(
+        "canvas"
+    );
+
+
+async function startCamera() {
+
+    try {
+
+        const stream =
+            await navigator.mediaDevices
+            .getUserMedia({
+
+                video: true
+
+            });
+
+
+        video.srcObject =
+            stream;
+
+    }
+
+    catch (error) {
+
+        alert(
+
+            "Camera access failed: "
+            + error
+
+        );
+
+    }
+
+}
+
+
+
+async function captureFace() {
+
+
+    if (
+        !video
+        ||
+        !video.srcObject
+    ) {
+
+        alert(
+            "Start the camera first."
+        );
+
+        return;
+    }
+
+
+    const context =
+        canvas.getContext(
+            "2d"
+        );
+
+
+    context.drawImage(
+
+        video,
+
+        0,
+        0,
+
+        canvas.width,
+        canvas.height
+
+    );
+
+
+    const image =
+        canvas.toDataURL(
+            "image/jpeg"
+        );
+
+
+    const faceResult =
+        document.getElementById(
+            "faceResult"
+        );
+
+
+    faceResult.innerHTML =
+        "🔄 Verifying face...";
+
+
+    try {
+
+
+        const response =
+            await fetch(
+                "/verify-face",
+                {
+
+                    method:
+                        "POST",
+
+                    headers: {
+
+                        "Content-Type":
+                            "application/json"
+
+                    },
+
+                    body:
+                        JSON.stringify({
+
+                            image: image
+
+                        })
+
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!data.success) {
+
+            faceResult.innerHTML =
+                "⚠️ "
+                + data.message;
+
+            return;
+
+        }
+
+
+        // FACE RESULT
+
+
+        if (data.verified) {
+
+            faceResult.innerHTML =
+                "<h2>✅ FACE MATCH</h2>"
+                +
+                "<p>Match score: "
+                +
+                data.similarity
+                +
+                "%</p>";
+
+
+            document.getElementById(
+                "faceStatus"
+            ).innerText =
+                "MATCH";
+
+
+            document.getElementById(
+                "faceModule"
+            ).innerText =
+                "✅ Face Verification";
+
+        }
+
+        else {
+
+
+            faceResult.innerHTML =
+                "<h2>❌ FACE DOES NOT MATCH</h2>"
+                +
+                "<p>Match score: "
+                +
+                data.similarity
+                +
+                "%</p>";
+
+
+            document.getElementById(
+                "faceStatus"
+            ).innerText =
+                "NO MATCH";
+
+
+            document.getElementById(
+                "faceModule"
+            ).innerText =
+                "⚠️ Face Verification Failed";
+
+        }
+
+
+        // SHOW FINAL DASHBOARD
+
+
+        const dashboard =
+            document.getElementById(
+                "finalDashboard"
+            );
+
+
+        dashboard.classList.remove(
+            "hidden"
+        );
+
+
+        document.getElementById(
+            "finalScore"
+        ).innerText =
+            data.final_score
+            + " / 100";
+
+
+        document.getElementById(
+            "finalOCR"
+        ).innerText =
+            data.ocr_score
+            + " / 100";
+
+
+        document.getElementById(
+            "finalTamper"
+        ).innerText =
+            data.tamper_score
+            + " / 100";
+
+
+        document.getElementById(
+            "finalFace"
+        ).innerText =
+            data.face_risk
+            + " / 100";
+
+
+        const badge =
+            document.getElementById(
+                "decisionBadge"
+            );
+
+
+        badge.innerText =
+            data.final_level;
+
+
+        badge.className =
+            "decision-badge";
+
+
+        if (
+            data.final_level
+            ===
+            "LOW RISK"
+        ) {
+
+            badge.classList.add(
+                "low"
+            );
+
+        }
+
+        else if (
+            data.final_level
+            ===
+            "MANUAL REVIEW"
+        ) {
+
+            badge.classList.add(
+                "medium"
+            );
+
+        }
+
+        else {
+
+            badge.classList.add(
+                "high"
+            );
+
+        }
+
+
+        // REASONS
+
+
+        const reasonList =
+            document.getElementById(
+                "finalReasons"
+            );
+
+
+        reasonList.innerHTML =
+            "";
+
+
+        data.reasons.forEach(
+            function(reason) {
+
+                const li =
+                    document.createElement(
+                        "li"
+                    );
+
+                li.innerText =
+                    reason;
+
+                reasonList.appendChild(
+                    li
+                );
+
+            }
+        );
+
+
+        document.getElementById(
+            "riskModule"
+        ).innerText =
+            "✅ Final Risk Assessment";
+
+
+        dashboard.scrollIntoView({
+
+            behavior:
+                "smooth"
+
+        });
+
+
+    }
+
+    catch (error) {
+
+
+        faceResult.innerHTML =
+
+            "Verification failed: "
+            + error;
+
+    }
+
+}
+
+
+</script>
+
+
+</body>
+
+</html>
