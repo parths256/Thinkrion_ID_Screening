@@ -26,7 +26,44 @@ LAST_DOCUMENT_PATH = None
 LAST_FIELDS = None
 LAST_TAMPERING = None
 
-def  ocr_image = prepare_image_for_ocr(filepath) results = get_ocr_reader().readtext(ocr_image):
+
+def prepare_image_for_ocr(filepath):
+    image = cv2.imread(filepath)
+
+    if image is None:
+        raise ValueError("The uploaded file is not a readable image.")
+
+    height, width = image.shape[:2]
+    max_dimension = 1200
+
+    if max(height, width) > max_dimension:
+        scale = max_dimension / max(height, width)
+        image = cv2.resize(
+            image,
+            (int(width * scale), int(height * scale)),
+            interpolation=cv2.INTER_AREA,
+        )
+
+    processed_path = os.path.join(
+        app.config["UPLOAD_FOLDER"], "ocr_processed.jpg"
+    )
+    cv2.imwrite(
+        processed_path,
+        image,
+        [cv2.IMWRITE_JPEG_QUALITY, 85],
+    )
+    return processed_path
+
+
+def get_ocr_reader():
+    global _reader
+    if _reader is None:
+        with _reader_lock:
+            if _reader is None:
+                import easyocr
+                _reader = easyocr.Reader(["en"], gpu=False)
+    return _reader
+
     image = cv2.imread(filepath)
 
     if image is None:
