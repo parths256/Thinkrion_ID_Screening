@@ -26,7 +26,7 @@ LAST_DOCUMENT_PATH = None
 LAST_FIELDS = None
 LAST_TAMPERING = None
 
-def prepare_image_for_ocr(filepath):
+def  ocr_image = prepare_image_for_ocr(filepath) results = get_ocr_reader().readtext(ocr_image):
     image = cv2.imread(filepath)
 
     if image is None:
@@ -290,7 +290,8 @@ def home():
         LAST_DOCUMENT_PATH = filepath
 
         try:
-            ocr_image = prepare_image_for_ocr(filepath) results = get_ocr_reader().readtext(ocr_image)
+            ocr_image = prepare_image_for_ocr(filepath)
+            results = get_ocr_reader().readtext(ocr_image)
         except Exception as exc:
             app.logger.exception("OCR failed")
             return render_template("index.html", error=f"OCR could not process this image: {exc}")
